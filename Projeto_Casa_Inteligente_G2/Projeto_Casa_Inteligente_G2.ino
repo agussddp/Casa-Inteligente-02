@@ -8,9 +8,9 @@
 #include <ESP32Servo.h>
 
 // --- WiFi & MQTT ---
-const char* ssid = "???";         //sua rede wifi
-const char* password = "???";     //senha da sua rede wifi
-const char* mqtt_server = "???";  //endereço do broker público
+const char* ssid = "ProjetosIoT_Esp32";         //sua rede wifi
+const char* password = "Sen@i134";     //senha da sua rede wifi
+const char* mqtt_server = "172.16.39.118";  //endereço do broker público
 const int mqtt_port = 1883;       //porta do broker público, geralmente 1883
 
 //Tópicos
@@ -27,14 +27,14 @@ const int rele = 26;
 int botao = 4;
 
 //Porta
-const int servoMotor = 12;
+const int servoMotor = 13;
 
 
 //Objetos
 WiFiClient espClient;
 PubSubClient client(espClient);
 Servo motor;
-/*
+
 //---Funçoes wifi----
 void conectarWiFi() {//verifica conexão wifi para somente depois iniciar o sistema
   Serial.println("Conectando ao WiFi...");
@@ -49,6 +49,8 @@ void conectarWiFi() {//verifica conexão wifi para somente depois iniciar o sist
 void reconectarMQTT() {//verifica e reconecta a conexão com o broker mqtt
   while (!client.connected()) {
     Serial.print("Reconectando MQTT...");
+    String clientId = "ESP32Client-"; 
+    clientId += String(WiFi.macAddress());
     if (client.connect("ESP32ClientTest")) {
       Serial.println("Conectado!");
       client.subscribe(topic_gas);//conecta ao topico do led assim que estabelecer ligação com o broker
@@ -69,29 +71,29 @@ void tratarMensagem(char* topic, byte* payload, unsigned int length) {//
 
   Serial.printf("Mensagem recebida [%s]: %s\n", topic, mensagem.c_str());
   
-  //led - luz da sala
-  if (strcmp(topic, topic_) == 0) {//tópico atual é o do led?
-    if (mensagem == "ligar") {
-      digitalWrite(luzSala, HIGH);
-    } else if (mensagem == "desligar") {
-      digitalWrite(luzSala, LOW);
+  //Tranca - Entrada
+  if (strcmp(topic, topic_trava) == 0) {//tópico atual é o do led?
+    if (mensagem == "Abrir") {
+      digitalWrite(rele, HIGH);
+    } else if (mensagem == "Fechar") {
+      digitalWrite(rele, LOW);
     }
   }
   
   //porta
   if (strcmp(topic, topic_porta) == 0) {//tópico atual é o da porta?
     if (mensagem == "abrir") {
-      DestrancarPorta();
-      delay(500);
+      //DestrancarPorta();
+      //delay(500);
       abrirportaservo();
     } else if (mensagem == "fechar") {
       fecharportaservo();
-      delay(500);
-      TrancarPorta();
+      //delay(500);
+      //TrancarPorta();
     }
   }
 }
-*/
+
 //---Funçoes Casa----
 void Campainha() {
   tone(buzzer, 1000, 300);  // Ding - 1000 Hz por 300 ms
@@ -138,29 +140,29 @@ void TrancarPorta() {
 }
 
 void DestrancarPorta() {
-  // String SenhaDg;
+   //String SenhaDg;
 
-  // Serial.println("Por gentileza digite a Senha para Destravar a Porta ");
-  // while (!Serial.available()) {}
-  // SenhaDg = Serial.readString();
+   //Serial.println("Por gentileza digite a Senha para Destravar a Porta ");
+   //while (!Serial.available()) {}
+   //SenhaDg = Serial.readString();
 
-  // if (SenhaDg) {
+   //if (SenhaDg) {
   digitalWrite(rele, HIGH);
   Serial.println("Porta desTrancada...");
 
-  // abrirportaservo();
-  // TrancarPorta();
-  // } else {
-  // if (motor.read() != 0)
-  // fecharportaservo();
-  // }
+  /* abrirportaservo();
+   TrancarPorta();
+   } else {
+   if (motor.read() != 0)
+   fecharportaservo();
+   }
 
-  // Serial.println("Senha invalida! Na 3 tentetiva ira ser bloqueada e tambem iremos acionar a policia, fica esperto(a).");
+   Serial.println("Senha invalida! Na 3 tentetiva ira ser bloqueada e tambem iremos acionar a policia, fica esperto(a).");
 
-  // digitalWrite(rele, LOW);
-  // Serial.println("Porta destrancada...");
+  digitalWrite(rele, LOW);
+   Serial.println("Porta destrancada...");
+*/
 }
-
 void tocarCampainha() {
 
   if (digitalRead(botao) == LOW) {  // botão pressionado (nível baixo)
@@ -178,20 +180,20 @@ void setup() {
   //fala ao programa que o pino 13 será umam saida/output
   pinMode(buzzer, OUTPUT);
   pinMode(MQ135, INPUT);
-  motor.attach(servoMotor);
   pinMode(rele, OUTPUT);
   pinMode(botao, INPUT_PULLUP);
+  motor.attach(servoMotor);
 
   //Deixa Trancado
   digitalWrite(rele, LOW);
 
   //
   motor.write(0);
-  /*
+ 
   conectarWiFi();//conecta no wifi
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(tratarMensagem);
-*/
+
   Serial.println("Sistema iniciado");
 
   Serial.println("Sensores sendo calibrados! aguente firme :P");
@@ -200,21 +202,22 @@ void setup() {
 }
 
 void loop() {
-  /* if (!client.connected()) reconectarMQTT();//se não tem conexão com o broker, tenta reconectar
-  client.loop(); //mantém a conexão com o broker serve sempre aberta
-*/
+/*if (!client.connected()) reconectarMQTT();//se não tem conexão com o broker, tenta reconectar
+client.loop(); //mantém a conexão com o broker serve sempre aberta*/
 
-  //verificarVazamentoDeGas();
-  //tocarCampainha();
+  verificarVazamentoDeGas();
+
+  tocarCampainha();
+
   DestrancarPorta();
-  delay(700);
+  delay(900);
 
   abrirportaservo();
-  delay(1000);
+  delay(2000);
 
   fecharportaservo();
-  delay(1000);
+  delay(2000);
 
   TrancarPorta();
-  delay(700);
+  delay(900);
 }
